@@ -1,9 +1,21 @@
-import React from 'react';
+
+import React, { useState } from 'react';
+import ReactDOM from 'react-dom/client';
 import { PLANNER_DATA } from './constants';
 import { PageData } from './types';
 import { CoverPage, HacksPage, ChecklistPage, MasterListPage, CleaningLogPage, GoalsPage, CalendarTrackerPage, SchedulePage, DeclutterGuidePage, DeclutterGridPage, SuppliesPage, ChallengePage, FinalPage, MaintenanceChecklistPage, MaintenanceLogPage, ProjectPlannerPage, InventoryPage, ShoppingListPage, NotesPage, ZoneCleaningPage, WeeklyPlannerPage, MealPlannerPage, BrainDumpPage, PasswordTrackerPage, ContactsPage, MonthlyBudgetPage, ExpenseTrackerPage, BillTrackerPage, HabitTrackerPage, PetCarePage, MedicalInfoPage, SchoolInfoPage, GratitudeJournalPage, WhenDidILastTrackerPage, TravelPlannerPage, PackingListPage, PartyPlannerPage, VehicleMaintenanceLogPage, SubscriptionTrackerPage, GoalsBoardPage, ReadingTrackerPage, ChoreChartPage, RewardChartPage, FamilyMeetingNotesPage } from './components/PlannerPages';
+import { DownloadIcon } from './components/Icons';
+
+declare global {
+  interface Window {
+    html2canvas: any;
+    jspdf: any;
+  }
+}
+
 
 const App: React.FC = () => {
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const renderPage = (page: PageData) => {
     switch (page.type) {
@@ -104,15 +116,116 @@ const App: React.FC = () => {
     }
   };
 
+  const handleDownload = async () => {
+    if (!window.jspdf || !window.html2canvas) {
+      console.error("PDF generation libraries not loaded.");
+      alert("Não foi possível gerar o PDF. Por favor, recarregue a página e tente novamente.");
+      return;
+    }
+
+    const pdfContainer = document.getElementById('pdf-container');
+    if (!pdfContainer) {
+        console.error("PDF container element not found.");
+        alert("Ocorreu um erro na preparação do PDF. Por favor, recarregue a página.");
+        return;
+    }
+
+    setIsGenerating(true);
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    const A4_WIDTH_MM = 210;
+    const A4_HEIGHT_MM = 297;
+
+    // Set a fixed size for the rendering container to maintain A4 aspect ratio and get good resolution
+    pdfContainer.style.width = '1050px'; 
+    pdfContainer.style.height = '1485px';
+
+    for (let i = 0; i < PLANNER_DATA.length; i++) {
+      const pageData = PLANNER_DATA[i];
+      try {
+        const root = ReactDOM.createRoot(pdfContainer);
+        const pageToRender = (
+          <div className="page-wrapper" style={{ margin: 0, maxWidth: 'none', boxShadow: 'none' }}>
+            {renderPage(pageData)}
+          </div>
+        );
+        
+        await new Promise<void>(resolve => {
+          root.render(pageToRender);
+          setTimeout(resolve, 50); // Small delay to ensure paint
+        });
+
+        const canvas = await window.html2canvas(pdfContainer, {
+          scale: 2,
+          useCORS: true,
+          logging: false,
+          width: pdfContainer.scrollWidth,
+          height: pdfContainer.scrollHeight,
+          windowWidth: pdfContainer.scrollWidth,
+          windowHeight: pdfContainer.scrollHeight,
+        });
+
+        const imgData = canvas.toDataURL('image/png');
+        if (i > 0) {
+          pdf.addPage();
+        }
+
+        const margin = 10;
+        const imgWidth = A4_WIDTH_MM - margin * 2;
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        
+        pdf.addImage(imgData, 'PNG', margin, margin, imgWidth, imgHeight);
+
+        root.unmount();
+      } catch (error) {
+        console.error(`Error processing page ${i + 1} (${pageData.id}):`, error);
+        setIsGenerating(false);
+        alert(`Ocorreu um erro ao gerar a página ${i + 1}. O download foi cancelado.`);
+        pdfContainer.style.width = 'auto'; 
+        pdfContainer.style.height = 'auto';
+        return;
+      }
+    }
+
+    pdfContainer.style.width = 'auto'; 
+    pdfContainer.style.height = 'auto';
+    pdf.save('planner-limpeza-tdah.pdf');
+    setIsGenerating(false);
+  };
+
+
   return (
-    <div className="bg-gray-50 min-h-screen" style={{backgroundImage: 'radial-gradient(#e5e7eb 1px, transparent 1px)', backgroundSize: '20px 20px'}}>
-       <div className="bg-gradient-to-br from-pink-100 via-purple-50 to-blue-100">
-        {PLANNER_DATA.map(page => (
-          <React.Fragment key={page.id}>
-            {renderPage(page)}
-          </React.Fragment>
-        ))}
-       </div>
+    <div>
+      {PLANNER_DATA.map(page => (
+        <div className="page-wrapper" key={page.id}>
+          {renderPage(page)}
+        </div>
+      ))}
+
+      <button
+        onClick={handleDownload}
+        disabled={isGenerating}
+        className="fixed bottom-5 right-5 z-50 flex items-center gap-2 px-4 py-3 bg-purple-600 text-white font-bold rounded-full shadow-lg hover:bg-purple-700 transition-all duration-300 ease-in-out disabled:bg-gray-400 disabled:cursor-not-allowed"
+        aria-label="Baixar Planner em PDF"
+      >
+        {isGenerating ? (
+            <>
+                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="http://www.w3.org/2000/svg">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span>Gerando PDF...</span>
+            </>
+        ) : (
+            <>
+                <DownloadIcon className="w-6 h-6" />
+                <span>Baixar PDF</span>
+            </>
+        )}
+      </button>
+
     </div>
   );
 };

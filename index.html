@@ -9,9 +9,13 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
       body {
         font-family: 'Inter', sans-serif;
+        /* Make body background grey to distinguish pages */
+        background-color: #e0e0e0;
       }
       h1, h2, h3, h4, h5, h6, .font-fredoka {
         font-family: 'Fredoka', sans-serif;
@@ -21,6 +25,59 @@
         -webkit-background-clip: text;
         background-clip: text;
         color: transparent;
+      }
+      .font-cursive {
+        font-family: 'Brush Script MT', 'Brush Script Std', cursive;
+      }
+
+      /* PDF / A4 Page Styles */
+      .page-wrapper {
+        margin: 2rem auto;
+        max-width: 21cm; /* A4 width */
+      }
+      .a4-page {
+        background: white;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+        border: 1px solid #ddd;
+        aspect-ratio: 210 / 297; /* A4 aspect ratio */
+        padding: 1.5cm;
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden; /* Important to prevent content from spilling */
+      }
+      
+      table {
+        table-layout: fixed;
+        width: 100%;
+      }
+      th, td {
+        overflow-wrap: break-word; /* For modern browsers */
+        word-wrap: break-word;     /* For older browsers */
+      }
+
+      /* Print Styles */
+      @media print {
+        body {
+          background-color: white;
+          margin: 0;
+        }
+        .page-wrapper {
+          margin: 0;
+          box-shadow: none;
+          border: none;
+          page-break-after: always;
+        }
+        .a4-page {
+          box-shadow: none;
+          border: none;
+          width: 100%;
+          height: 100%;
+          padding: 1.5cm;
+          max-width: none;
+          aspect-ratio: auto;
+          overflow: visible;
+        }
       }
     </style>
   <script type="importmap">
@@ -35,5 +92,6 @@
 </head>
   <body>
     <div id="root"></div>
+    <div id="pdf-container" style="position: absolute; left: -9999px; top: 0;"></div>
   </body>
 </html>
