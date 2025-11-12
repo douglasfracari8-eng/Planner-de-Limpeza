@@ -1,18 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { PLANNER_DATA } from './constants';
-import PlannerNavigation from './components/PlannerNavigation';
+import { PageData } from './types';
 import { CoverPage, HacksPage, ChecklistPage, MasterListPage, CleaningLogPage, GoalsPage, CalendarTrackerPage, SchedulePage, DeclutterGuidePage, DeclutterGridPage, SuppliesPage, ChallengePage, FinalPage, MaintenanceChecklistPage, MaintenanceLogPage, ProjectPlannerPage, InventoryPage, ShoppingListPage, NotesPage, ZoneCleaningPage, WeeklyPlannerPage, MealPlannerPage, BrainDumpPage, PasswordTrackerPage, ContactsPage, MonthlyBudgetPage, ExpenseTrackerPage, BillTrackerPage, HabitTrackerPage, PetCarePage, MedicalInfoPage, SchoolInfoPage, GratitudeJournalPage, WhenDidILastTrackerPage, TravelPlannerPage, PackingListPage, PartyPlannerPage, VehicleMaintenanceLogPage, SubscriptionTrackerPage, GoalsBoardPage, ReadingTrackerPage, ChoreChartPage, RewardChartPage, FamilyMeetingNotesPage } from './components/PlannerPages';
 
 const App: React.FC = () => {
-  const [currentPage, setCurrentPage] = useState(0);
 
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [currentPage]);
-  
-  const page = PLANNER_DATA[currentPage];
-
-  const renderPage = () => {
+  const renderPage = (page: PageData) => {
     switch (page.type) {
       case 'cover':
         return <CoverPage page={page} />;
@@ -112,15 +105,14 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="bg-gray-50 min-h-screen pb-24" style={{backgroundImage: 'radial-gradient(#e5e7eb 1px, transparent 1px)', backgroundSize: '20px 20px'}}>
+    <div className="bg-gray-50 min-h-screen" style={{backgroundImage: 'radial-gradient(#e5e7eb 1px, transparent 1px)', backgroundSize: '20px 20px'}}>
        <div className="bg-gradient-to-br from-pink-100 via-purple-50 to-blue-100">
-        {renderPage()}
+        {PLANNER_DATA.map(page => (
+          <React.Fragment key={page.id}>
+            {renderPage(page)}
+          </React.Fragment>
+        ))}
        </div>
-      <PlannerNavigation
-        currentPage={currentPage}
-        totalPages={PLANNER_DATA.length}
-        onPageChange={setCurrentPage}
-      />
     </div>
   );
 };
